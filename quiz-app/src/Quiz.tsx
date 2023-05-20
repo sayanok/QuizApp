@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import QuizData from "./QuizData";
 
 const Quiz: React.FC = () => {
@@ -11,9 +11,18 @@ const Quiz: React.FC = () => {
   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
   const [record, setRecord] = useState(0);
 
+  const [time, setTime] = useState<number>(0);
+  let timerId = useRef<NodeJS.Timer>();
+
   useEffect(() => {
     getAndSedQuizAndChoices();
   }, [numberOfQuestions]);
+
+  useEffect(() => {
+    timerId.current = setInterval(() => {
+      setTime((time) => time + 1);
+    }, 1000);
+  }, []);
 
   function getAndSedQuizAndChoices() {
     let num = Math.floor(Math.random() * 10);
@@ -38,11 +47,14 @@ const Quiz: React.FC = () => {
     setUsersAnswer(undefined);
   }
 
+  function judgeAndStopStopwatch() {
+    judgment();
+    clearInterval(timerId.current);
+  }
+
   function judgment() {
     if (usersAnswer === correctAnswer) {
-      setRecord((record) => {
-        return record + 1;
-      });
+      setRecord((record) => record + 1);
     }
   }
 
@@ -73,15 +85,26 @@ const Quiz: React.FC = () => {
       ) : (
         <button
           onClick={() => {
-            judgment();
+            judgeAndStopStopwatch();
           }}
           disabled={usersAnswer ? false : true}
         >
-          <Link to="/result" state={record}>
+          <Link to="/result" state={[record, time]}>
             結果を見る
           </Link>
         </button>
       )}
+      <p>
+        中断してトップにもどる
+        <Link
+          to="/"
+          onClick={() => {
+            clearInterval(timerId.current);
+          }}
+        >
+          Home
+        </Link>
+      </p>
     </>
   );
 };
